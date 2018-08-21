@@ -1,0 +1,6 @@
+/Pipfile*
+/app.db
+/*.egg-info
+*.py[co]
+__pycache__
+/dist
