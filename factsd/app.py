@@ -7,17 +7,16 @@ import uuid
 
 
 class MethodRewriteMiddleware(object):
-
     def __init__(self, app):
         self.app = app
 
     def __call__(self, environ, start_response):
-        if 'METHOD_OVERRIDE' in environ.get('QUERY_STRING', ''):
-            args = url_decode(environ['QUERY_STRING'])
-            method = args.get('__METHOD_OVERRIDE__')
+        if "METHOD_OVERRIDE" in environ.get("QUERY_STRING", ""):
+            args = url_decode(environ["QUERY_STRING"])
+            method = args.get("__METHOD_OVERRIDE__")
             if method:
-                method = method.encode('ascii', 'replace')
-                environ['REQUEST_METHOD'] = method.decode('ascii')
+                method = method.encode("ascii", "replace")
+                environ["REQUEST_METHOD"] = method.decode("ascii")
         return self.app(environ, start_response)
 
 
@@ -88,15 +87,17 @@ class VariableView(MethodView):
     def put(self, path):
         check_permissions(path, level="write")
 
-        VariableHistory.create(path=path, data=json.dumps(request.get_json()))
-
         try:
             var = Variable.get(path=path)
         except Variable.DoesNotExist:
             var = Variable(path=path)
 
+        old_data = var.data
         var.data = json.dumps(request.get_json())
-        var.save()
+
+        if old_data == var.data and not "force" in request.args:
+            var.save()
+            VariableHistory.create(path=path, data=json.dumps(request.get_json()))
 
         return self.get(path)
 
